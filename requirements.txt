@@ -1,0 +1,6 @@
+google-generativeai
+duckduckgo-search
+beautifulsoup4
+streamlit
+fpdf
+requests
