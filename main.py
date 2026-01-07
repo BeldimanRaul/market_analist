@@ -32,7 +32,7 @@ if "portfolio_results" not in st.session_state:
 
 with st.sidebar:
     st.header(" Configurare")
-    # AM ELIMINAT api_key = "" CARE SUPRASCRIA CHEIA DIN .ENV
+    
     st.divider() 
 
     st.subheader(" Adaugă în Portofoliu")
@@ -100,7 +100,7 @@ with tab_chat:
 
     if prompt := st.chat_input("Analizează o companie..."):
         if not api_key:
-            st.warning("Cheia API lipsește din fișierul api.env.")
+            st.warning("Cheia API lipsește .")
         else:
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
