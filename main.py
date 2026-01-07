@@ -73,7 +73,7 @@ if api_key:
         5. NU lipi cuvintele între ele, chiar dacă folosești diacritice (ș, ț, ă, î, â).
         6. Când folosești cifre sau simboluri (ex: $43.29), pune un spațiu înainte și după ele.
         7. Formatează datele LIVE folosind uneltele disponibile.
-Exemplu de flux corect:
+        Exemplu de flux corect:
 User: "Compară KO și PEP"
 Tu: Apelezi get_financial_data("KO") -> primești datele -> Apelezi get_financial_data("PEP") -> primești datele.
 Răspuns final: "Iată comparația: Coca-Cola are un dividend de X%, iar Pepsi de Y%..."""
