@@ -1,2 +1,4 @@
 venv/
 tempCodeRunnerFile.py
+.env
+api.env

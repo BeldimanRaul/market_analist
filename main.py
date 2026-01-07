@@ -2,8 +2,11 @@ import streamlit as st
 import google.generativeai as genai
 import tools  
 import os
+from dotenv import load_dotenv
 import re
 
+load_dotenv("api.env")
+api_key = os.getenv("API_KEY")
 
 st.set_page_config(
     page_title="Market Agent Pro",
@@ -13,8 +16,6 @@ st.set_page_config(
 )
 
 st.title("BFinance")
-
-
 
 if "portfolio_results" not in st.session_state:
     with st.spinner(" Îți verific portofoliul personal..."):
@@ -31,8 +32,7 @@ if "portfolio_results" not in st.session_state:
 
 with st.sidebar:
     st.header(" Configurare")
-    api_key = st.text_input(" Google API Key", type="password")
-    
+    # AM ELIMINAT api_key = "" CARE SUPRASCRIA CHEIA DIN .ENV
     st.divider() 
 
     st.subheader(" Adaugă în Portofoliu")
@@ -56,7 +56,7 @@ with st.sidebar:
 if api_key:
     try:
         genai.configure(api_key=api_key)
-        my_tools = [tools.search_internet, tools.get_financial_data, tools.generate_price_chart]
+        my_tools = [tools.search_internet, tools.get_financial_data, tools.generate_price_chart,tools.generate_pdf_report]
         
         if "chat_session" not in st.session_state or st.session_state.chat_session is None:
             model = genai.GenerativeModel(
@@ -84,7 +84,7 @@ Răspuns final: "Iată comparația: Coca-Cola are un dividend de X%, iar Pepsi d
         st.error(f"Eroare API: {e}")
 
 
-tab_chat, tab_portofoliu = st.tabs(["💬 Conversație", "📊 Portofoliul Meu"])
+tab_chat, tab_portofoliu = st.tabs([" Conversație", " Portofoliul Meu"])
 
 with tab_chat:
     if "messages" not in st.session_state:
@@ -94,15 +94,13 @@ with tab_chat:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-            # Verificăm dacă există calea către imagine și dacă fișierul chiar există pe disc
             img_path = message.get("image")
             if img_path and os.path.exists(img_path):
                 st.image(img_path)
 
-    # INPUT CHAT
     if prompt := st.chat_input("Analizează o companie..."):
         if not api_key:
-            st.warning("Introdu cheia API în sidebar.")
+            st.warning("Cheia API lipsește din fișierul api.env.")
         else:
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
@@ -114,7 +112,6 @@ with tab_chat:
                         response = st.session_state.chat_session.send_message(prompt)
                         text_response = response.text
                         
-                        # Căutăm nume de fișier imagine în textul AI-ului
                         image_file = None
                         match = re.search(r"(\w+_chart\.png)", text_response)
                         
@@ -126,7 +123,6 @@ with tab_chat:
                                 st.image(potential_path)
                                 image_file = potential_path
                         
-                        # Salvăm în istoric DOAR dacă avem date valide
                         message_data = {"role": "assistant", "content": text_response}
                         if image_file:
                             message_data["image"] = image_file
@@ -135,10 +131,33 @@ with tab_chat:
                         st.rerun()
                     except Exception as e:
                         st.error(f"Eroare: {e}")
-
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
+        st.divider()
+        col_pdf, _ = st.columns([1, 4])
+        with col_pdf:
+            if st.button(" Generează Raport PDF"):
+                last_msg = st.session_state.messages[-1]
+                text_content = last_msg["content"]
+                img_content = last_msg.get("image") # Poate fi None dacă nu există grafic
+                
+                with st.spinner("Se creează PDF-ul..."):
+                    try:
+                        pdf_path = tools.generate_pdf_report(text_content, img_content)
+                        if pdf_path and os.path.exists(pdf_path):
+                            with open(pdf_path, "rb") as f:
+                                st.download_button(
+                                    label=" Descarcă Raportul",
+                                    data=f,
+                                    file_name="Raport_BFinance.pdf",
+                                    mime="application/pdf"
+                                )
+                            st.success("Raportul este gata!")
+                        else:
+                            st.error("Nu s-a putut genera fișierul.")
+                    except Exception as e:
+                        st.error(f"Eroare PDF: {e}")
 with tab_portofoliu:
     st.header(" Evoluția Portofoliului")
-    # Afișăm rezultatele procesate anterior
     if st.session_state.get("portfolio_results"):
         st.markdown(st.session_state.portfolio_results)
     
